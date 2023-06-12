@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 const app = express();
 const port = process.env.PORT || 5000
@@ -53,6 +53,19 @@ async function run() {
     const cartCollections = client.db('summerCamp').collection('carts');
 
 
+
+    // verify  admin
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email }
+      const user = await usersCollections.findOne(query);
+      if (user?.role !== 'admin') {
+        return res.status(404).send({ error: true, message: 'forbidden messsage' })
+      }
+      next()
+    };
+
+// jwt api
     app.post('/jwt', (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
@@ -112,7 +125,7 @@ async function run() {
       res.send(result)
     })
     // Make admin patch
-    app.patch('/users/admin/:id', async (req, res) => {
+    app.patch('/users/admin/:id',verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) }
       const updateDoc = {
@@ -123,6 +136,35 @@ async function run() {
       const result = await usersCollections.updateOne(filter, updateDoc);
       res.send(result)
     });
+
+// For useAdmin hook
+    app.get('/users/admin/:email', verifyJWT, async (req, res) => {
+      const email = req.params.email;
+
+      if (req.decoded.email !== email) {
+        return res.send({ admin: false })
+      }
+
+      const query = { email: email };
+      const user = await usersCollections.findOne(query);
+      const result = { admin: user?.role === 'admin' }
+      res.send(result)
+    });
+    // Instructor hook
+    app.get('/users/instructor/:email',verifyJWT, async (req, res) => {
+      const email = req.params.email;
+
+      if (req.decoded.email !== email) {
+        return res.send({ instructor: false })
+      }
+
+      const query = { email: email };
+      const user = await usersCollections.findOne(query);
+      const result = { instructor: user?.role === 'instructor' }
+      res.send(result)
+    });
+
+// Make instructor
     app.patch('/users/instructor/:id', async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) }
