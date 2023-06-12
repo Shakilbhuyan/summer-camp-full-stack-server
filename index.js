@@ -50,6 +50,7 @@ async function run() {
     await client.connect();
     const usersCollections = client.db('summerCamp').collection('users');
     const classCollections = client.db('summerCamp').collection('classes');
+    const cartCollections = client.db('summerCamp').collection('carts');
 
 
     app.post('/jwt', (req, res) => {
@@ -78,6 +79,14 @@ app.get('/allclasses', async(req, res) =>{
   const result = await classCollections.find().toArray();
   res.send(result)
 })
+ 
+
+// Add to cart
+app.post('/carts', async (req, res) => {
+  const item = req.body;
+  const result = await cartCollections.insertOne(item);
+  res.send(result)
+});
 
 
 
