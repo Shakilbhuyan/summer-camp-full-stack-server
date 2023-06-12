@@ -73,21 +73,67 @@ async function run() {
       res.send(result);
     });
 
-// All Classes
+    // get all user by Admin 
+    app.get('/users', verifyJWT, async (req, res) => {
+      const result = await usersCollections.find().toArray();
+      res.send(result)
+    });
 
-app.get('/allclasses', async(req, res) =>{
-  const result = await classCollections.find().toArray();
-  res.send(result)
-})
- 
+    // All Classes
 
-// Add to cart
-app.post('/carts', async (req, res) => {
-  const item = req.body;
-  const result = await cartCollections.insertOne(item);
-  res.send(result)
-});
+    app.get('/allclasses', async (req, res) => {
+      const result = await classCollections.find().toArray();
+      res.send(result)
+    })
 
+
+    // Add to cart
+    app.post('/carts', async (req, res) => {
+      const item = req.body;
+      const result = await cartCollections.insertOne(item);
+      res.send(result)
+    });
+
+    // gets carts by email
+    app.get('/carts', verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send([])
+      }
+
+      const decodedEmail = req.decoded.email;
+
+      if (email !== decodedEmail) {
+        return res.status(403).send({ error: true, message: 'Forbidden access' })
+      }
+
+      const query = { email: email };
+      const result = await cartCollections.find(query).toArray();
+      res.send(result)
+    })
+    // Make admin patch
+    app.patch('/users/admin/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const updateDoc = {
+        $set: {
+          role: 'admin'
+        },
+      };
+      const result = await usersCollections.updateOne(filter, updateDoc);
+      res.send(result)
+    });
+    app.patch('/users/instructor/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const updateDoc = {
+        $set: {
+          role: 'instructor'
+        },
+      };
+      const result = await usersCollections.updateOne(filter, updateDoc);
+      res.send(result)
+    });
 
 
     // Send a ping to confirm a successful connection
