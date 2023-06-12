@@ -49,6 +49,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const usersCollections = client.db('summerCamp').collection('users');
+    const classCollections = client.db('summerCamp').collection('classes');
 
 
     app.post('/jwt', (req, res) => {
@@ -70,6 +71,14 @@ async function run() {
       const result = await usersCollections.insertOne(user);
       res.send(result);
     });
+
+// All Classes
+
+app.get('/allclasses', async(req, res) =>{
+  const result = await classCollections.find().toArray();
+  res.send(result)
+})
+
 
 
     // Send a ping to confirm a successful connection
